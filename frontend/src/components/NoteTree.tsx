@@ -84,8 +84,8 @@ export function NoteTreeItem({
           transition-colors duration-150
           ${
             isSelected
-              ? 'bg-purple-900/40 border border-purple-700/60'
-              : 'hover:bg-amethyst-accent/30 border border-transparent'
+              ? 'bg-primary/20 border border-primary/40'
+              : 'hover:bg-accent/30 border border-transparent'
           }
         `}
         onClick={() => onSelect(note)}
@@ -98,7 +98,7 @@ export function NoteTreeItem({
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="flex-shrink-0 text-amethyst-text-muted hover:text-amethyst-text w-4 h-4"
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground w-4 h-4"
             >
               {isExpanded ? '▼' : '▶'}
             </button>
@@ -114,7 +114,7 @@ export function NoteTreeItem({
             <div
               className={`
                 text-sm truncate
-                ${note.type === 'ai' ? 'text-purple-400 font-medium' : 'text-amethyst-text'}
+                ${note.type === 'ai' ? 'text-primary font-medium' : 'text-foreground'}
                 ${isSelected ? 'font-semibold' : ''}
               `}
             >
@@ -123,7 +123,7 @@ export function NoteTreeItem({
 
             {/* Process type badge */}
             {note.process_type && (
-              <div className="text-xs text-amethyst-text-muted mt-0.5">
+              <div className="text-xs text-muted-foreground mt-0.5">
                 {note.process_type}
               </div>
             )}
@@ -145,10 +145,10 @@ export function NoteTreeItem({
               }}
               className="
                 opacity-0 group-hover:opacity-100
-                text-red-400 hover:text-red-300
+                text-destructive hover:text-destructive/80
                 transition-opacity duration-150
                 p-1 rounded
-                hover:bg-red-900/30
+                hover:bg-destructive/10
               "
               title="Delete note"
             >
@@ -224,7 +224,7 @@ export function NoteTree({
 
   if (tree.length === 0) {
     return (
-      <div className="text-center py-8 text-amethyst-text-muted">
+      <div className="text-center py-8 text-muted-foreground">
         <p>No notes yet</p>
         <p className="text-sm mt-2">Create your first note to get started</p>
       </div>

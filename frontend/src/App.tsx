@@ -165,29 +165,29 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-amethyst-bg flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-amethyst-text-muted">Loading notes...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading notes...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-amethyst-bg">
+    <div className="flex h-screen bg-background">
       {/* Sidebar - Tree View */}
-      <div className="w-1/3 bg-amethyst-card border-r border-amethyst-border flex flex-col">
+      <div className="w-1/3 bg-card border-r border-border flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-amethyst-border bg-gradient-to-r from-purple-900/30 to-violet-900/30">
+        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-accent/20">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-xl font-bold text-amethyst-text">AI Notes</h1>
-              <p className="text-xs text-amethyst-text-muted">Proof of Concept</p>
+              <h1 className="text-xl font-bold text-foreground">AI Notes</h1>
+              <p className="text-xs text-muted-foreground">Proof of Concept</p>
             </div>
             <button
               onClick={handleCreateNote}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm text-sm font-medium"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
             >
               + New Note
             </button>
@@ -195,7 +195,7 @@ function App() {
         </div>
 
         {/* Notes count */}
-        <div className="px-4 py-2 bg-amethyst-bg border-b border-amethyst-border text-xs text-amethyst-text-muted">
+        <div className="px-4 py-2 bg-muted border-b border-border text-xs text-muted-foreground">
           {notes.length} {notes.length === 1 ? 'note' : 'notes'}
         </div>
 
@@ -215,14 +215,14 @@ function App() {
         {selectedNote ? (
           <>
             {/* Left Panel - User Note */}
-            <div className="flex-1 flex flex-col border-r border-amethyst-border overflow-hidden">
+            <div className="flex-1 flex flex-col border-r border-border overflow-hidden">
               {/* Header */}
-              <div className="px-6 py-4 bg-amethyst-card border-b border-amethyst-border">
+              <div className="px-6 py-4 bg-card border-b border-border">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">📝</span>
                     <div>
-                      <h2 className="text-lg font-semibold text-amethyst-text">
+                      <h2 className="text-lg font-semibold text-foreground">
                         Your Note
                       </h2>
                     </div>
@@ -235,10 +235,10 @@ function App() {
                       px-5 py-2 rounded-lg font-medium text-sm
                       ${
                         isSaving
-                          ? 'bg-amethyst-accent text-amethyst-text-muted cursor-not-allowed'
-                          : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                          : 'bg-primary text-primary-foreground hover:opacity-90 shadow-sm'
                       }
-                      transition-colors
+                      transition-all
                     `}
                   >
                     {isSaving ? 'Saving...' : 'Save'}
@@ -247,14 +247,14 @@ function App() {
 
                 {/* Error Display */}
                 {error && (
-                  <div className="mt-3 p-3 bg-red-900/30 border border-red-700/50 rounded-lg text-red-300 text-sm">
+                  <div className="mt-3 p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm">
                     <strong>Error:</strong> {error}
                   </div>
                 )}
               </div>
 
               {/* Editor */}
-              <div className="flex-1 overflow-y-auto p-6 bg-amethyst-bg">
+              <div className="flex-1 overflow-y-auto p-6 bg-background">
                 <NoteEditor
                   content={editorContent}
                   onChange={setEditorContent}
@@ -278,15 +278,15 @@ function App() {
             {selectedAiNote ? (
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-6 py-4 bg-amethyst-card border-b border-amethyst-border">
+                <div className="px-6 py-4 bg-card border-b border-border">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">🤖</span>
                     <div>
-                      <h2 className="text-lg font-semibold text-amethyst-text">
+                      <h2 className="text-lg font-semibold text-foreground">
                         AI Generated Note
                       </h2>
                       {selectedAiNote.process_type && (
-                        <p className="text-xs text-amethyst-text-muted">
+                        <p className="text-xs text-muted-foreground">
                           Process: {selectedAiNote.process_type}
                         </p>
                       )}
@@ -295,14 +295,14 @@ function App() {
 
                   {/* Processing Failed */}
                   {selectedAiNote.status === 'failed' && selectedAiNote.error_message && (
-                    <div className="mt-3 p-3 bg-orange-900/30 border border-orange-700/50 rounded-lg text-orange-300 text-sm">
+                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm">
                       <strong>Processing Failed:</strong> {selectedAiNote.error_message}
                     </div>
                   )}
                 </div>
 
                 {/* AI Note Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-amethyst-bg">
+                <div className="flex-1 overflow-y-auto p-6 bg-background">
                   <NoteEditor
                     content={selectedAiNote.content}
                     onChange={() => {}}
@@ -312,10 +312,10 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-amethyst-text-muted bg-amethyst-bg">
+              <div className="flex-1 flex items-center justify-center text-muted-foreground bg-background">
                 <div className="text-center">
                   <div className="text-6xl mb-4">🤖</div>
-                  <p className="text-lg font-medium mb-2 text-amethyst-text">No AI note yet</p>
+                  <p className="text-lg font-medium mb-2 text-foreground">No AI note yet</p>
                   <p className="text-sm">
                     Use the AI actions on the left to generate insights
                   </p>
@@ -324,10 +324,10 @@ function App() {
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-amethyst-text-muted">
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <div className="text-6xl mb-4">📝</div>
-              <p className="text-lg font-medium mb-2 text-amethyst-text">No note selected</p>
+              <p className="text-lg font-medium mb-2 text-foreground">No note selected</p>
               <p className="text-sm">
                 Select a note from the sidebar or create a new one
               </p>

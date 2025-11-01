@@ -67,7 +67,7 @@ export function ProcessButtons({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-amethyst-text uppercase tracking-wide">
+      <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
         AI Actions
       </h3>
 
@@ -108,7 +108,7 @@ export function ProcessButtons({
                 hidden group-hover:block
                 absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                 px-3 py-2 rounded-lg
-                bg-amethyst-card border border-amethyst-border text-amethyst-text text-xs
+                bg-popover border border-border text-popover-foreground text-xs
                 whitespace-normal max-w-xs
                 z-10
                 pointer-events-none
@@ -117,7 +117,7 @@ export function ProcessButtons({
                 {process.description}
                 <div className="
                   absolute top-full left-1/2 transform -translate-x-1/2
-                  border-4 border-transparent border-t-amethyst-card
+                  border-4 border-transparent border-t-popover
                 "></div>
               </div>
             </button>
@@ -126,9 +126,9 @@ export function ProcessButtons({
       </div>
 
       {isProcessing && (
-        <div className="flex items-center gap-2 text-sm text-amethyst-text bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-700/40">
+        <div className="flex items-center gap-2 text-sm text-foreground bg-primary/10 px-4 py-2 rounded-lg border border-primary/40">
           <svg
-            className="animate-spin h-4 w-4 text-purple-400"
+            className="animate-spin h-4 w-4 text-primary"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

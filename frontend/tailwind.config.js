@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['class'],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,17 +8,44 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Amethyst Haze theme colors
-        'amethyst': {
-          bg: '#252525',           // Main background (oklch 0.145)
-          card: '#343434',         // Card/panel background (oklch 0.205)
-          border: '#464646',       // Border color (oklch 0.275)
-          input: '#535353',        // Input background (oklch 0.325)
-          accent: '#5e5e5e',       // Accent elements (oklch 0.371)
-          text: '#fafafa',         // Primary text (oklch 0.985)
-          'text-muted': '#a1a1a1', // Muted text (oklch 0.7)
-          primary: '#ebebeb',      // Primary elements (oklch 0.922)
+        background: 'oklch(var(--background))',
+        foreground: 'oklch(var(--foreground))',
+        card: {
+          DEFAULT: 'oklch(var(--card))',
+          foreground: 'oklch(var(--card-foreground))',
         },
+        popover: {
+          DEFAULT: 'oklch(var(--popover))',
+          foreground: 'oklch(var(--popover-foreground))',
+        },
+        primary: {
+          DEFAULT: 'oklch(var(--primary))',
+          foreground: 'oklch(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'oklch(var(--secondary))',
+          foreground: 'oklch(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'oklch(var(--muted))',
+          foreground: 'oklch(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'oklch(var(--accent))',
+          foreground: 'oklch(var(--accent-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'oklch(var(--destructive))',
+          foreground: 'oklch(var(--destructive-foreground))',
+        },
+        border: 'oklch(var(--border))',
+        input: 'oklch(var(--input))',
+        ring: 'oklch(var(--ring))',
+      },
+      borderRadius: {
+        lg: '0.5rem',
+        md: 'calc(0.5rem - 2px)',
+        sm: 'calc(0.5rem - 4px)',
       },
     },
   },
