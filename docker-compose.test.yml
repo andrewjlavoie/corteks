@@ -1,0 +1,72 @@
+# Docker Compose configuration for E2E testing
+# This configuration uses mock LLM service instead of real Anthropic API
+
+services:
+  # PostgreSQL Database (same as production)
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-notes-test-db
+    environment:
+      POSTGRES_DB: notesdb
+      POSTGRES_USER: notesuser
+      POSTGRES_PASSWORD: notespass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notesuser -d notesdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ai-notes-test-network
+
+  # Backend API Server with Mock LLM
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: ai-notes-test-backend
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://notesuser:notespass@postgres:5432/notesdb
+      USE_MOCK_LLM: "true"  # Enable mock LLM for testing
+      ANTHROPIC_API_KEY: "mock-key-for-testing"  # Dummy key (not used)
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - /app/node_modules
+    networks:
+      - ai-notes-test-network
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: ai-notes-test-frontend
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - /app/node_modules
+    networks:
+      - ai-notes-test-network
+
+networks:
+  ai-notes-test-network:
+    driver: bridge

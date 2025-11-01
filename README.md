@@ -158,6 +158,55 @@ corteks/
 └── README.md
 ```
 
+## Testing
+
+### Running E2E Tests
+
+The project includes comprehensive Playwright E2E tests that use a **mock LLM service** (no API costs!).
+
+```bash
+# Start test environment with mock LLM
+docker-compose -f docker-compose.test.yml up --build
+
+# In a new terminal, run tests
+cd tests
+npm install
+npx playwright install chromium
+npm test
+
+# Or run with UI
+npm run test:ui
+```
+
+**Test Coverage:**
+- ✅ 37 E2E tests covering all user journeys
+- ✅ Note creation, editing, and deletion
+- ✅ AI processing with 4 different actions
+- ✅ Tree navigation and hierarchy
+- ✅ Mock LLM (zero API costs, fast execution)
+
+See `tests/README.md` for detailed testing documentation.
+
+### Mock vs Real LLM
+
+**Mock LLM** (for testing):
+```bash
+# Automatically enabled in docker-compose.test.yml
+docker-compose -f docker-compose.test.yml up
+```
+
+**Real LLM** (for production):
+```bash
+# Use regular docker-compose
+docker-compose up
+```
+
+Toggle manually with environment variable:
+```bash
+export USE_MOCK_LLM=true  # Use mock
+export USE_MOCK_LLM=false # Use real Anthropic API
+```
+
 ## Development
 
 ### View Logs
