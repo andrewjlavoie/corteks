@@ -44,30 +44,30 @@ export function ProcessButtons({
 
   const colorClasses: Record<string, { bg: string; bgHover: string; bgDisabled: string }> = {
     blue: {
-      bg: 'bg-blue-500',
-      bgHover: 'hover:bg-blue-600',
-      bgDisabled: 'bg-blue-300',
+      bg: 'bg-blue-600',
+      bgHover: 'hover:bg-blue-700',
+      bgDisabled: 'bg-blue-900/40',
     },
     green: {
-      bg: 'bg-green-500',
-      bgHover: 'hover:bg-green-600',
-      bgDisabled: 'bg-green-300',
+      bg: 'bg-emerald-600',
+      bgHover: 'hover:bg-emerald-700',
+      bgDisabled: 'bg-emerald-900/40',
     },
     purple: {
-      bg: 'bg-purple-500',
-      bgHover: 'hover:bg-purple-600',
-      bgDisabled: 'bg-purple-300',
+      bg: 'bg-purple-600',
+      bgHover: 'hover:bg-purple-700',
+      bgDisabled: 'bg-purple-900/40',
     },
     orange: {
-      bg: 'bg-orange-500',
-      bgHover: 'hover:bg-orange-600',
-      bgDisabled: 'bg-orange-300',
+      bg: 'bg-orange-600',
+      bgHover: 'hover:bg-orange-700',
+      bgDisabled: 'bg-orange-900/40',
     },
   };
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+      <h3 className="text-sm font-semibold text-amethyst-text uppercase tracking-wide">
         AI Actions
       </h3>
 
@@ -108,15 +108,16 @@ export function ProcessButtons({
                 hidden group-hover:block
                 absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                 px-3 py-2 rounded-lg
-                bg-gray-900 text-white text-xs
+                bg-amethyst-card border border-amethyst-border text-amethyst-text text-xs
                 whitespace-normal max-w-xs
                 z-10
                 pointer-events-none
+                shadow-lg
               ">
                 {process.description}
                 <div className="
                   absolute top-full left-1/2 transform -translate-x-1/2
-                  border-4 border-transparent border-t-gray-900
+                  border-4 border-transparent border-t-amethyst-card
                 "></div>
               </div>
             </button>
@@ -125,9 +126,9 @@ export function ProcessButtons({
       </div>
 
       {isProcessing && (
-        <div className="flex items-center gap-2 text-sm text-gray-600 bg-blue-50 px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-sm text-amethyst-text bg-purple-900/30 px-4 py-2 rounded-lg border border-purple-700/40">
           <svg
-            className="animate-spin h-4 w-4 text-blue-500"
+            className="animate-spin h-4 w-4 text-purple-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

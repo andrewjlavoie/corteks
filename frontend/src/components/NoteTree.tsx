@@ -60,7 +60,7 @@ export function NoteTreeItem({
     switch (note.status) {
       case 'processing':
         return (
-          <span className="text-xs text-orange-600 flex items-center gap-1">
+          <span className="text-xs text-orange-400 flex items-center gap-1">
             <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
@@ -69,7 +69,7 @@ export function NoteTreeItem({
           </span>
         );
       case 'failed':
-        return <span className="text-xs text-red-600">⚠ Failed</span>;
+        return <span className="text-xs text-red-400">⚠ Failed</span>;
       default:
         return null;
     }
@@ -84,8 +84,8 @@ export function NoteTreeItem({
           transition-colors duration-150
           ${
             isSelected
-              ? 'bg-blue-100 border border-blue-300'
-              : 'hover:bg-gray-100 border border-transparent'
+              ? 'bg-purple-900/40 border border-purple-700/60'
+              : 'hover:bg-amethyst-accent/30 border border-transparent'
           }
         `}
         onClick={() => onSelect(note)}
@@ -98,7 +98,7 @@ export function NoteTreeItem({
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="flex-shrink-0 text-gray-500 hover:text-gray-700 w-4 h-4"
+              className="flex-shrink-0 text-amethyst-text-muted hover:text-amethyst-text w-4 h-4"
             >
               {isExpanded ? '▼' : '▶'}
             </button>
@@ -114,7 +114,7 @@ export function NoteTreeItem({
             <div
               className={`
                 text-sm truncate
-                ${note.type === 'ai' ? 'text-blue-700 font-medium' : 'text-gray-800'}
+                ${note.type === 'ai' ? 'text-purple-400 font-medium' : 'text-amethyst-text'}
                 ${isSelected ? 'font-semibold' : ''}
               `}
             >
@@ -123,7 +123,7 @@ export function NoteTreeItem({
 
             {/* Process type badge */}
             {note.process_type && (
-              <div className="text-xs text-gray-500 mt-0.5">
+              <div className="text-xs text-amethyst-text-muted mt-0.5">
                 {note.process_type}
               </div>
             )}
@@ -145,10 +145,10 @@ export function NoteTreeItem({
               }}
               className="
                 opacity-0 group-hover:opacity-100
-                text-red-500 hover:text-red-700
+                text-red-400 hover:text-red-300
                 transition-opacity duration-150
                 p-1 rounded
-                hover:bg-red-50
+                hover:bg-red-900/30
               "
               title="Delete note"
             >
@@ -224,7 +224,7 @@ export function NoteTree({
 
   if (tree.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-amethyst-text-muted">
         <p>No notes yet</p>
         <p className="text-sm mt-2">Create your first note to get started</p>
       </div>

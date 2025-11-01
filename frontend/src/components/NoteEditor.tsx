@@ -21,7 +21,7 @@ export function NoteEditor({
     editable,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none',
+        class: 'prose prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none max-w-none prose-headings:text-amethyst-text prose-p:text-amethyst-text prose-strong:text-amethyst-text prose-code:text-purple-300',
       },
     },
     onUpdate: ({ editor }) => {
@@ -49,7 +49,7 @@ export function NoteEditor({
 
   if (!editor) {
     return (
-      <div className="border rounded-lg p-4 min-h-[200px] bg-gray-50 animate-pulse">
+      <div className="border border-amethyst-border rounded-lg p-4 min-h-[200px] bg-amethyst-card/50 animate-pulse text-amethyst-text-muted">
         Loading editor...
       </div>
     );
@@ -58,8 +58,8 @@ export function NoteEditor({
   return (
     <div
       className={`
-        border rounded-lg bg-white
-        ${editable ? 'border-gray-300 hover:border-gray-400' : 'border-gray-200'}
+        border rounded-lg bg-amethyst-card
+        ${editable ? 'border-amethyst-border hover:border-purple-700/50' : 'border-amethyst-border/50'}
         ${editable ? 'shadow-sm' : ''}
       `}
     >
