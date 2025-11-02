@@ -239,44 +239,41 @@ function App() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar - Tree View */}
-      <div className="w-1/3 bg-card border-r border-border flex flex-col">
+      <div className="w-64 bg-card border-r border-border flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-accent/20">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-xl font-bold text-foreground">AI Notes</h1>
-              <p className="text-xs text-muted-foreground">Proof of Concept</p>
-            </div>
-            <div className="flex gap-2">
+        <div className="p-3 border-b border-border">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-sm font-semibold text-foreground">Notes</h1>
+            <div className="flex gap-1">
               <button
                 onClick={handleCreateFolder}
-                className="px-3 py-2 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
-                title="Create new folder"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded transition-colors"
+                title="New folder"
               >
-                + Folder
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                </svg>
               </button>
               <button
                 onClick={handleCreateNote}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded transition-colors"
+                title="New note"
               >
-                + Note
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
               </button>
             </div>
           </div>
           {selectedFolder && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              Creating in: 📁 {selectedFolder.name}
+            <div className="text-xs text-muted-foreground px-1">
+              In: {selectedFolder.name}
             </div>
           )}
         </div>
 
-        {/* Items count */}
-        <div className="px-4 py-2 bg-muted border-b border-border text-xs text-muted-foreground">
-          {items.length} {items.length === 1 ? 'item' : 'items'}
-        </div>
-
         {/* Tree */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-2">
           <NoteTree
             items={items}
             onSelectItem={handleSelectItem}

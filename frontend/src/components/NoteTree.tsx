@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Item, Note, Folder } from '../lib/api';
+import { ContextMenu, ContextMenuItem } from './ContextMenu';
 
 interface NoteTreeItemProps {
   item: Item;
@@ -25,6 +26,7 @@ export function NoteTreeItem({
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const hasChildren = children.length > 0;
 
   const isFolder = item.item_type === 'folder';
@@ -100,11 +102,7 @@ export function NoteTreeItem({
     }
   };
 
-  // Get icon based on item type
-  const getIcon = () => {
-    if (isFolder) return '📁';
-    return item.item_type === 'ai-note' ? '🤖' : '📝';
-  };
+  // No icons - cleaner Notion-like UI
 
   // Handle rename submission
   const handleRenameSubmit = () => {
@@ -115,20 +113,85 @@ export function NoteTreeItem({
     setRenameDraft('');
   };
 
+  // Handle context menu
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  // Context menu items
+  const getContextMenuItems = (): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
+
+    if (isFolder && onRename) {
+      items.push({
+        label: 'Rename',
+        icon: '✏️',
+        shortcut: '⌘⇧R',
+        onClick: () => {
+          setRenameDraft((item as Folder).name);
+          setIsRenaming(true);
+        },
+      });
+    }
+
+    if (isFolder || item.item_type === 'note') {
+      items.push({
+        label: 'Duplicate',
+        icon: '📋',
+        shortcut: '⌘D',
+        onClick: () => {
+          // TODO: Implement duplicate
+          console.log('Duplicate', item.id);
+        },
+        disabled: true,
+      });
+
+      items.push({
+        label: 'Move to',
+        icon: '➡️',
+        shortcut: '⌘⇧P',
+        onClick: () => {
+          // TODO: Implement move to
+          console.log('Move to', item.id);
+        },
+        disabled: true,
+      });
+    }
+
+    if (onDelete) {
+      items.push({ separator: true } as ContextMenuItem);
+      items.push({
+        label: isFolder ? 'Delete folder' : 'Delete note',
+        icon: '🗑️',
+        danger: true,
+        onClick: () => {
+          if (window.confirm(`Delete this ${isFolder ? 'folder' : 'note'}? This cannot be undone.`)) {
+            onDelete(item.id, item.item_type);
+          }
+        },
+      });
+    }
+
+    return items;
+  };
+
   return (
-    <div style={{ marginLeft: level * 16 }} className="mb-1">
+    <div style={{ marginLeft: level * 12 }} className="mb-0.5">
       <div
         className={`
-          group flex items-center justify-between gap-2
-          px-3 py-2 rounded-lg cursor-pointer
+          group flex items-center justify-between gap-1
+          px-2 py-1.5 rounded cursor-pointer
           transition-colors duration-150
           ${
             isSelected
-              ? 'bg-primary/20 border border-primary/40'
-              : 'hover:bg-accent/30 border border-transparent'
+              ? 'bg-primary/20'
+              : 'hover:bg-accent/30'
           }
         `}
         onClick={() => onSelect(item)}
+        onContextMenu={handleContextMenu}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Expand/collapse button */}
@@ -143,11 +206,6 @@ export function NoteTreeItem({
               {isExpanded ? '▼' : '▶'}
             </button>
           )}
-
-          {/* Item icon */}
-          <span className="flex-shrink-0 text-base">
-            {getIcon()}
-          </span>
 
           {/* Item preview text or rename input */}
           <div className="flex-1 min-w-0">
@@ -247,6 +305,16 @@ export function NoteTreeItem({
             />
           ))}
         </div>
+      )}
+
+      {/* Context menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={getContextMenuItems()}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );
