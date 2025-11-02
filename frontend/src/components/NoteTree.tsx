@@ -85,7 +85,6 @@ export function NoteTreeItem({
   };
 
   const previewText = getPreviewText(item.content, item.item_type);
-  const isSelected = selectedId === item.id;
 
   // Status indicator (only for notes, not folders)
   const getStatusIndicator = () => {
