@@ -11,6 +11,8 @@ interface NoteTreeItemProps {
   onDelete?: (id: string, itemType: string) => void;
   onRename?: (id: string, newName: string) => void;
   autoRenameId?: string;
+  onCreateNote?: (parentId: string) => void;
+  onCreateFolder?: (parentId: string) => void;
 }
 
 export function NoteTreeItem({
@@ -22,6 +24,8 @@ export function NoteTreeItem({
   onDelete,
   onRename,
   autoRenameId,
+  onCreateNote,
+  onCreateFolder,
 }: NoteTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -124,16 +128,43 @@ export function NoteTreeItem({
   const getContextMenuItems = (): ContextMenuItem[] => {
     const items: ContextMenuItem[] = [];
 
-    if (isFolder && onRename) {
-      items.push({
-        label: 'Rename',
-        icon: '✏️',
-        shortcut: '⌘⇧R',
-        onClick: () => {
-          setRenameDraft((item as Folder).name);
-          setIsRenaming(true);
-        },
-      });
+    // Folder-specific actions
+    if (isFolder) {
+      if (onCreateNote) {
+        items.push({
+          label: 'New Note',
+          icon: '📄',
+          onClick: () => {
+            onCreateNote(item.id);
+          },
+        });
+      }
+
+      if (onCreateFolder) {
+        items.push({
+          label: 'New Folder',
+          icon: '📁',
+          onClick: () => {
+            onCreateFolder(item.id);
+          },
+        });
+      }
+
+      if (items.length > 0) {
+        items.push({ separator: true } as ContextMenuItem);
+      }
+
+      if (onRename) {
+        items.push({
+          label: 'Rename',
+          icon: '✏️',
+          shortcut: '⌘⇧R',
+          onClick: () => {
+            setRenameDraft((item as Folder).name);
+            setIsRenaming(true);
+          },
+        });
+      }
     }
 
     if (isFolder || item.item_type === 'note') {
@@ -302,6 +333,8 @@ export function NoteTreeItem({
               onDelete={onDelete}
               onRename={onRename}
               autoRenameId={autoRenameId}
+              onCreateNote={onCreateNote}
+              onCreateFolder={onCreateFolder}
             />
           ))}
         </div>
@@ -328,6 +361,8 @@ interface NoteTreeProps {
   onDeleteItem?: (id: string, itemType: string) => void;
   onRenameFolder?: (id: string, newName: string) => void;
   autoRenameId?: string; // ID of folder that should auto-enter rename mode
+  onCreateNote?: (parentId: string) => void;
+  onCreateFolder?: (parentId: string) => void;
 }
 
 export function NoteTree({
@@ -337,6 +372,8 @@ export function NoteTree({
   onDeleteItem,
   onRenameFolder,
   autoRenameId,
+  onCreateNote,
+  onCreateFolder,
 }: NoteTreeProps) {
   // Build tree structure with full recursion
   const buildTree = () => {
@@ -411,6 +448,8 @@ export function NoteTree({
           onDelete={onDeleteItem}
           onRename={onRenameFolder}
           autoRenameId={autoRenameId}
+          onCreateNote={onCreateNote}
+          onCreateFolder={onCreateFolder}
         />
       ))}
     </div>

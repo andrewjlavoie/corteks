@@ -47,7 +47,7 @@ function App() {
   }, [items, loadItems]);
 
   // Create a new note
-  const handleCreateNote = async () => {
+  const handleCreateNote = async (parentId?: string) => {
     try {
       setError(null);
       const emptyContent = {
@@ -60,8 +60,9 @@ function App() {
         ],
       };
 
-      const parentId = selectedFolder?.id;
-      const newNote = await api.createNote(emptyContent, parentId);
+      // Use provided parentId or fall back to selectedFolder
+      const finalParentId = parentId || selectedFolder?.id;
+      const newNote = await api.createNote(emptyContent, finalParentId);
       await loadItems();
       setSelectedNote(newNote);
       setEditorContent(newNote.content);
@@ -73,12 +74,13 @@ function App() {
   };
 
   // Create a new folder (inline, Obsidian-style)
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = async (parentId?: string) => {
     try {
       setError(null);
 
-      const parentId = selectedFolder?.id;
-      const newFolder = await api.createFolder('New Folder', parentId);
+      // Use provided parentId or fall back to selectedFolder
+      const finalParentId = parentId || selectedFolder?.id;
+      const newFolder = await api.createFolder('New Folder', finalParentId);
       await loadItems();
 
       // Trigger auto-rename for the newly created folder
@@ -281,6 +283,8 @@ function App() {
             onDeleteItem={handleDeleteItem}
             onRenameFolder={handleRenameFolder}
             autoRenameId={autoRenameId}
+            onCreateNote={handleCreateNote}
+            onCreateFolder={handleCreateFolder}
           />
         </div>
       </div>
