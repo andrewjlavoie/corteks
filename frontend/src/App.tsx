@@ -65,7 +65,7 @@ function App() {
       await loadItems();
       setSelectedNote(newNote);
       setEditorContent(newNote.content);
-      setSelectedFolder(null);
+      // Keep selectedFolder for creating more items in the same folder
     } catch (err: any) {
       console.error('Failed to create note:', err);
       setError(err.message || 'Failed to create note');
@@ -114,7 +114,7 @@ function App() {
     const note = item as Note;
     setSelectedNote(note);
     setEditorContent(note.content);
-    setSelectedFolder(null);
+    // Don't clear selectedFolder - maintain folder context for creation
 
     // If selecting a user note, automatically select its first AI child for side-by-side view
     if (note.item_type === 'note') {
