@@ -114,7 +114,7 @@ function App() {
     setSelectedFolder(null);
 
     // If selecting a user note, automatically select its first AI child for side-by-side view
-    if (note.type === 'user') {
+    if (note.item_type === 'note') {
       const aiChildren = getAiChildren(note.id);
       setSelectedAiNote(aiChildren.length > 0 ? aiChildren[0] : null);
     } else {

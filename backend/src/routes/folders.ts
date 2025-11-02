@@ -13,6 +13,10 @@ router.post('/', async (req: Request<{}, {}, CreateFolderRequest>, res: Response
       return res.status(400).json({ error: 'Folder name is required' });
     }
 
+    if (name.trim().length > 255) {
+      return res.status(400).json({ error: 'Folder name too long (max 255 characters)' });
+    }
+
     // Validate parent exists if provided
     if (parent_id) {
       const parentCheck = await pool.query(
@@ -121,6 +125,11 @@ router.patch('/:id', async (req: Request<{ id: string }, {}, UpdateFolderRequest
           return res.status(400).json({ error: 'Cannot create circular folder structure' });
         }
       }
+    }
+
+    // Validate name if provided
+    if (name !== undefined && name.trim() !== '' && name.trim().length > 255) {
+      return res.status(400).json({ error: 'Folder name too long (max 255 characters)' });
     }
 
     // Build update query
@@ -242,10 +251,15 @@ router.post('/:id/move', async (req: Request<{ id: string }, {}, MoveItemRequest
 });
 
 // Helper function to check for circular folder references
-async function checkCircularReference(folderId: string, targetParentId: string): Promise<boolean> {
+async function checkCircularReference(
+  folderId: string,
+  targetParentId: string,
+  maxDepth: number = 100
+): Promise<boolean> {
   let currentId: string | null = targetParentId;
+  let depth = 0;
 
-  while (currentId) {
+  while (currentId && depth < maxDepth) {
     if (currentId === folderId) {
       return true; // Circular reference detected
     }
@@ -260,6 +274,13 @@ async function checkCircularReference(folderId: string, targetParentId: string):
     }
 
     currentId = result.rows[0].parent_id;
+    depth++;
+  }
+
+  // If we hit max depth, assume circular to be safe
+  if (depth >= maxDepth) {
+    console.error(`Circular reference check exceeded max depth (${maxDepth}) for folder ${folderId}`);
+    return true;
   }
 
   return false;

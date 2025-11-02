@@ -80,19 +80,19 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const api = {
   /**
-   * Get all notes
+   * Get all items (notes, folders, and AI notes)
    */
-  async getNotes(): Promise<Note[]> {
+  async getNotes(): Promise<Item[]> {
     const response = await fetch(`${API_BASE}/notes`);
-    return handleResponse<Note[]>(response);
+    return handleResponse<Item[]>(response);
   },
 
   /**
-   * Get root notes (notes with no parent)
+   * Get root items (items with no parent)
    */
-  async getRootNotes(): Promise<Note[]> {
+  async getRootNotes(): Promise<Item[]> {
     const response = await fetch(`${API_BASE}/notes/roots`);
-    return handleResponse<Note[]>(response);
+    return handleResponse<Item[]>(response);
   },
 
   /**

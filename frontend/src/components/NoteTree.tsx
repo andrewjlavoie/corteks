@@ -54,12 +54,12 @@ export function NoteTreeItem({
       };
 
       const text = findFirstText(content);
-      if (!text.trim()) return item.type === 'ai' ? 'AI Response' : 'Empty note';
+      if (!text.trim()) return item.item_type === 'ai-note' ? 'AI Response' : 'Empty note';
 
       // Truncate long text
       return text.length > 60 ? text.slice(0, 60) + '...' : text;
     } catch {
-      return item.type === 'ai' ? 'AI Response' : 'Note';
+      return item.item_type === 'ai-note' ? 'AI Response' : 'Note';
     }
   };
 
@@ -92,7 +92,7 @@ export function NoteTreeItem({
   // Get icon based on item type
   const getIcon = () => {
     if (isFolder) return '📁';
-    return item.type === 'ai' ? '🤖' : '📝';
+    return item.item_type === 'ai-note' ? '🤖' : '📝';
   };
 
   // Handle rename submission
@@ -163,7 +163,7 @@ export function NoteTreeItem({
                   className={`
                     text-sm truncate
                     ${isFolder ? 'font-medium text-foreground' : ''}
-                    ${item.type === 'ai' ? 'text-primary font-medium' : 'text-foreground'}
+                    ${item.item_type === 'ai-note' ? 'text-primary font-medium' : 'text-foreground'}
                     ${isSelected ? 'font-semibold' : ''}
                   `}
                   onDoubleClick={() => {
@@ -192,7 +192,7 @@ export function NoteTreeItem({
           {getStatusIndicator()}
 
           {/* Delete button (for user notes and folders, appears on hover) */}
-          {(item.type === 'user' || isFolder) && onDelete && (
+          {(item.item_type === 'note' || isFolder) && onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -256,7 +256,7 @@ export function NoteTree({
   onDeleteItem,
   onRenameFolder,
 }: NoteTreeProps) {
-  // Build tree structure
+  // Build tree structure with full recursion
   const buildTree = () => {
     const itemMap = new Map<string, Item[]>();
 
@@ -280,17 +280,29 @@ export function NoteTree({
       });
     };
 
+    // Recursive function to build full tree with all descendants
+    const buildNodeWithChildren = (itemId: string): Item[] => {
+      const directChildren = itemMap.get(itemId) || [];
+      return sortItems(directChildren).map(child => {
+        // Recursively get all descendants
+        const childrenOfChild = buildNodeWithChildren(child.id);
+        return {
+          ...child,
+          // Store children in the item itself (needed for recursive rendering)
+          _children: childrenOfChild
+        } as Item & { _children?: Item[] };
+      });
+    };
+
     // Get root items (items with no parent)
     const rootItems = sortItems(itemMap.get('root') || []);
 
-    // Recursive function to get children
-    const getChildren = (itemId: string): Item[] => {
-      return sortItems(itemMap.get(itemId) || []);
-    };
-
     return rootItems.map((item) => ({
-      item,
-      children: getChildren(item.id),
+      item: {
+        ...item,
+        _children: buildNodeWithChildren(item.id)
+      } as Item & { _children?: Item[] },
+      children: buildNodeWithChildren(item.id),
     }));
   };
 
