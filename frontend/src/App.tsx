@@ -3,6 +3,7 @@ import { api, Item, Note, Folder } from './lib/api';
 import { NoteEditor } from './components/NoteEditor';
 import { ProcessButtons } from './components/ProcessButtons';
 import { NoteTree } from './components/NoteTree';
+import { InputModal } from './components/InputModal';
 
 function App() {
   const [items, setItems] = useState<Item[]>([]);
@@ -14,6 +15,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAiNote, setSelectedAiNote] = useState<Note | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [showFolderModal, setShowFolderModal] = useState(false);
 
   // Load all items (notes and folders) on mount
   const loadItems = useCallback(async () => {
@@ -72,20 +74,27 @@ function App() {
   };
 
   // Create a new folder
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = () => {
+    setShowFolderModal(true);
+  };
+
+  const handleFolderModalConfirm = async (folderName: string) => {
     try {
       setError(null);
-      const folderName = prompt('Enter folder name:');
-      if (!folderName || !folderName.trim()) return;
+      setShowFolderModal(false);
 
       const parentId = selectedFolder?.id;
-      await api.createFolder(folderName.trim(), parentId);
+      await api.createFolder(folderName, parentId);
       await loadItems();
       setSelectedFolder(null);
     } catch (err: any) {
       console.error('Failed to create folder:', err);
       setError(err.message || 'Failed to create folder');
     }
+  };
+
+  const handleFolderModalCancel = () => {
+    setShowFolderModal(false);
   };
 
   // Get AI children of a note
@@ -404,6 +413,16 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Folder Creation Modal */}
+      <InputModal
+        isOpen={showFolderModal}
+        title="Create New Folder"
+        placeholder="Enter folder name..."
+        onConfirm={handleFolderModalConfirm}
+        onCancel={handleFolderModalCancel}
+        maxLength={255}
+      />
     </div>
   );
 }
