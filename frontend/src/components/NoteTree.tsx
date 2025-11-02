@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Item, Note, Folder } from '../lib/api';
 
 interface NoteTreeItemProps {
@@ -9,6 +9,7 @@ interface NoteTreeItemProps {
   level?: number;
   onDelete?: (id: string, itemType: string) => void;
   onRename?: (id: string, newName: string) => void;
+  autoRenameId?: string;
 }
 
 export function NoteTreeItem({
@@ -19,6 +20,7 @@ export function NoteTreeItem({
   level = 0,
   onDelete,
   onRename,
+  autoRenameId,
 }: NoteTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -26,6 +28,15 @@ export function NoteTreeItem({
   const hasChildren = children.length > 0;
 
   const isFolder = item.item_type === 'folder';
+
+  // Auto-trigger rename mode for newly created folders
+  useEffect(() => {
+    if (autoRenameId === item.id && isFolder) {
+      setRenameDraft((item as Folder).name);
+      setIsRenaming(true);
+      setIsExpanded(true); // Ensure parent is expanded
+    }
+  }, [autoRenameId, item.id, isFolder, item]);
 
   // Extract first text from Tiptap JSON for preview
   const getPreviewText = (content: any, itemType: string): string => {
@@ -232,6 +243,7 @@ export function NoteTreeItem({
               level={level + 1}
               onDelete={onDelete}
               onRename={onRename}
+              autoRenameId={autoRenameId}
             />
           ))}
         </div>
@@ -247,6 +259,7 @@ interface NoteTreeProps {
   selectedItemId?: string;
   onDeleteItem?: (id: string, itemType: string) => void;
   onRenameFolder?: (id: string, newName: string) => void;
+  autoRenameId?: string; // ID of folder that should auto-enter rename mode
 }
 
 export function NoteTree({
@@ -255,6 +268,7 @@ export function NoteTree({
   selectedItemId,
   onDeleteItem,
   onRenameFolder,
+  autoRenameId,
 }: NoteTreeProps) {
   // Build tree structure with full recursion
   const buildTree = () => {
@@ -328,6 +342,7 @@ export function NoteTree({
           selectedId={selectedItemId}
           onDelete={onDeleteItem}
           onRename={onRenameFolder}
+          autoRenameId={autoRenameId}
         />
       ))}
     </div>

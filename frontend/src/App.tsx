@@ -3,7 +3,6 @@ import { api, Item, Note, Folder } from './lib/api';
 import { NoteEditor } from './components/NoteEditor';
 import { ProcessButtons } from './components/ProcessButtons';
 import { NoteTree } from './components/NoteTree';
-import { InputModal } from './components/InputModal';
 
 function App() {
   const [items, setItems] = useState<Item[]>([]);
@@ -15,7 +14,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAiNote, setSelectedAiNote] = useState<Note | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [autoRenameId, setAutoRenameId] = useState<string | undefined>(undefined);
 
   // Load all items (notes and folders) on mount
   const loadItems = useCallback(async () => {
@@ -73,28 +72,23 @@ function App() {
     }
   };
 
-  // Create a new folder
-  const handleCreateFolder = () => {
-    setShowFolderModal(true);
-  };
-
-  const handleFolderModalConfirm = async (folderName: string) => {
+  // Create a new folder (inline, Obsidian-style)
+  const handleCreateFolder = async () => {
     try {
       setError(null);
-      setShowFolderModal(false);
 
       const parentId = selectedFolder?.id;
-      await api.createFolder(folderName, parentId);
+      const newFolder = await api.createFolder('New Folder', parentId);
       await loadItems();
-      setSelectedFolder(null);
+
+      // Trigger auto-rename for the newly created folder
+      setAutoRenameId(newFolder.id);
+
+      // Don't clear selectedFolder - this allows creating multiple nested folders
     } catch (err: any) {
       console.error('Failed to create folder:', err);
       setError(err.message || 'Failed to create folder');
     }
-  };
-
-  const handleFolderModalCancel = () => {
-    setShowFolderModal(false);
   };
 
   // Get AI children of a note
@@ -128,9 +122,9 @@ function App() {
       setSelectedAiNote(aiChildren.length > 0 ? aiChildren[0] : null);
     } else {
       // If selecting an AI note, show it in the right panel and find its parent
-      const parent = items.find((n) => n.id === note.parent_id) as Note;
+      const parent = items.find((n) => n.id === note.parent_id);
       if (parent && parent.item_type !== 'folder') {
-        setSelectedNote(parent);
+        setSelectedNote(parent as Note);
         setEditorContent(parent.content);
         setSelectedAiNote(note);
       }
@@ -220,6 +214,11 @@ function App() {
       setError(null);
       await api.updateFolder(id, newName);
       await loadItems();
+
+      // Clear auto-rename state after successful rename
+      if (autoRenameId === id) {
+        setAutoRenameId(undefined);
+      }
     } catch (err: any) {
       console.error('Failed to rename folder:', err);
       setError(err.message || 'Failed to rename folder');
@@ -284,6 +283,7 @@ function App() {
             selectedItemId={selectedNote?.id || selectedFolder?.id}
             onDeleteItem={handleDeleteItem}
             onRenameFolder={handleRenameFolder}
+            autoRenameId={autoRenameId}
           />
         </div>
       </div>
@@ -413,16 +413,6 @@ function App() {
           </div>
         )}
       </div>
-
-      {/* Folder Creation Modal */}
-      <InputModal
-        isOpen={showFolderModal}
-        title="Create New Folder"
-        placeholder="Enter folder name..."
-        onConfirm={handleFolderModalConfirm}
-        onCancel={handleFolderModalCancel}
-        maxLength={255}
-      />
     </div>
   );
 }
