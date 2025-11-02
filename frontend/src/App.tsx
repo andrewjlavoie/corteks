@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, Note } from './lib/api';
+import { api, Item, Note, Folder } from './lib/api';
 import { NoteEditor } from './components/NoteEditor';
 import { ProcessButtons } from './components/ProcessButtons';
 import { NoteTree } from './components/NoteTree';
+import { InputModal } from './components/InputModal';
 
 function App() {
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [editorContent, setEditorContent] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -13,34 +14,38 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAiNote, setSelectedAiNote] = useState<Note | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [showFolderModal, setShowFolderModal] = useState(false);
 
-  // Load all notes on mount
-  const loadNotes = useCallback(async () => {
+  // Load all items (notes and folders) on mount
+  const loadItems = useCallback(async () => {
     try {
       setError(null);
-      const allNotes = await api.getNotes();
-      setNotes(allNotes);
+      const allItems = await api.getNotes();
+      setItems(allItems);
       setIsLoading(false);
     } catch (err: any) {
-      console.error('Failed to load notes:', err);
-      setError(err.message || 'Failed to load notes');
+      console.error('Failed to load items:', err);
+      setError(err.message || 'Failed to load items');
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    loadItems();
+  }, [loadItems]);
 
   // Auto-refresh while processing
   useEffect(() => {
-    const hasProcessingNotes = notes.some((n) => n.status === 'processing');
+    const hasProcessingNotes = items.some(
+      (item) => item.item_type !== 'folder' && (item as Note).status === 'processing'
+    );
 
     if (hasProcessingNotes) {
-      const interval = setInterval(loadNotes, 2000); // Poll every 2 seconds
+      const interval = setInterval(loadItems, 2000); // Poll every 2 seconds
       return () => clearInterval(interval);
     }
-  }, [notes, loadNotes]);
+  }, [items, loadItems]);
 
   // Create a new note
   const handleCreateNote = async () => {
@@ -56,35 +61,75 @@ function App() {
         ],
       };
 
-      const newNote = await api.createNote(emptyContent);
-      await loadNotes();
+      const parentId = selectedFolder?.id;
+      const newNote = await api.createNote(emptyContent, parentId);
+      await loadItems();
       setSelectedNote(newNote);
       setEditorContent(newNote.content);
+      setSelectedFolder(null);
     } catch (err: any) {
       console.error('Failed to create note:', err);
       setError(err.message || 'Failed to create note');
     }
   };
 
-  // Get AI children of a note
-  const getAiChildren = (parentId: string) => {
-    return notes.filter((n) => n.parent_id === parentId && n.type === 'ai');
+  // Create a new folder
+  const handleCreateFolder = () => {
+    setShowFolderModal(true);
   };
 
-  // Handle note selection
-  const handleSelectNote = (note: Note) => {
-    setSelectedNote(note);
-    setEditorContent(note.content);
+  const handleFolderModalConfirm = async (folderName: string) => {
+    try {
+      setError(null);
+      setShowFolderModal(false);
+
+      const parentId = selectedFolder?.id;
+      await api.createFolder(folderName, parentId);
+      await loadItems();
+      setSelectedFolder(null);
+    } catch (err: any) {
+      console.error('Failed to create folder:', err);
+      setError(err.message || 'Failed to create folder');
+    }
+  };
+
+  const handleFolderModalCancel = () => {
+    setShowFolderModal(false);
+  };
+
+  // Get AI children of a note
+  const getAiChildren = (parentId: string) => {
+    return items.filter(
+      (item) => item.parent_id === parentId && item.item_type === 'ai-note'
+    ) as Note[];
+  };
+
+  // Handle item selection
+  const handleSelectItem = (item: Item) => {
     setError(null);
 
+    // If selecting a folder, just highlight it
+    if (item.item_type === 'folder') {
+      setSelectedFolder(item as Folder);
+      setSelectedNote(null);
+      setEditorContent(null);
+      setSelectedAiNote(null);
+      return;
+    }
+
+    const note = item as Note;
+    setSelectedNote(note);
+    setEditorContent(note.content);
+    setSelectedFolder(null);
+
     // If selecting a user note, automatically select its first AI child for side-by-side view
-    if (note.type === 'user') {
+    if (note.item_type === 'note') {
       const aiChildren = getAiChildren(note.id);
       setSelectedAiNote(aiChildren.length > 0 ? aiChildren[0] : null);
     } else {
       // If selecting an AI note, show it in the right panel and find its parent
-      const parent = notes.find((n) => n.id === note.parent_id);
-      if (parent) {
+      const parent = items.find((n) => n.id === note.parent_id) as Note;
+      if (parent && parent.item_type !== 'folder') {
         setSelectedNote(parent);
         setEditorContent(parent.content);
         setSelectedAiNote(note);
@@ -101,7 +146,7 @@ function App() {
       setError(null);
 
       const updatedNote = await api.updateNote(selectedNote.id, editorContent);
-      await loadNotes();
+      await loadItems();
 
       setSelectedNote(updatedNote);
       setIsSaving(false);
@@ -122,14 +167,14 @@ function App() {
 
       await api.processNote(selectedNote.id, processType);
 
-      // Refresh notes to see the new child note
-      await loadNotes();
+      // Refresh items to see the new child note
+      await loadItems();
 
       // After refresh, automatically select the newly created AI child
       setTimeout(() => {
-        const aiChildren = notes.filter(
-          (n) => n.parent_id === selectedNote.id && n.type === 'ai'
-        );
+        const aiChildren = items.filter(
+          (item) => item.parent_id === selectedNote.id && item.item_type === 'ai-note'
+        ) as Note[];
         if (aiChildren.length > 0) {
           setSelectedAiNote(aiChildren[aiChildren.length - 1]); // Select the latest one
         }
@@ -140,26 +185,44 @@ function App() {
       console.error('Processing failed:', err);
       setError(err.message || 'Processing failed');
       setIsProcessing(false);
-      await loadNotes(); // Still refresh to see error state
+      await loadItems(); // Still refresh to see error state
     }
   };
 
-  // Delete a note
-  const handleDeleteNote = async (id: string) => {
+  // Delete an item (note or folder)
+  const handleDeleteItem = async (id: string, itemType: string) => {
     try {
       setError(null);
-      await api.deleteNote(id);
 
-      // If we deleted the currently selected note, clear selection
-      if (selectedNote?.id === id) {
-        setSelectedNote(null);
-        setEditorContent(null);
+      if (itemType === 'folder') {
+        await api.deleteFolder(id);
+        if (selectedFolder?.id === id) {
+          setSelectedFolder(null);
+        }
+      } else {
+        await api.deleteNote(id);
+        if (selectedNote?.id === id) {
+          setSelectedNote(null);
+          setEditorContent(null);
+        }
       }
 
-      await loadNotes();
+      await loadItems();
     } catch (err: any) {
-      console.error('Failed to delete note:', err);
-      setError(err.message || 'Failed to delete note');
+      console.error('Failed to delete item:', err);
+      setError(err.message || 'Failed to delete item');
+    }
+  };
+
+  // Rename a folder
+  const handleRenameFolder = async (id: string, newName: string) => {
+    try {
+      setError(null);
+      await api.updateFolder(id, newName);
+      await loadItems();
+    } catch (err: any) {
+      console.error('Failed to rename folder:', err);
+      setError(err.message || 'Failed to rename folder');
     }
   };
 
@@ -185,27 +248,42 @@ function App() {
               <h1 className="text-xl font-bold text-foreground">AI Notes</h1>
               <p className="text-xs text-muted-foreground">Proof of Concept</p>
             </div>
-            <button
-              onClick={handleCreateNote}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
-            >
-              + New Note
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreateFolder}
+                className="px-3 py-2 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
+                title="Create new folder"
+              >
+                + Folder
+              </button>
+              <button
+                onClick={handleCreateNote}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all shadow-sm text-sm font-medium"
+              >
+                + Note
+              </button>
+            </div>
           </div>
+          {selectedFolder && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Creating in: 📁 {selectedFolder.name}
+            </div>
+          )}
         </div>
 
-        {/* Notes count */}
+        {/* Items count */}
         <div className="px-4 py-2 bg-muted border-b border-border text-xs text-muted-foreground">
-          {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+          {items.length} {items.length === 1 ? 'item' : 'items'}
         </div>
 
         {/* Tree */}
         <div className="flex-1 overflow-y-auto p-4">
           <NoteTree
-            notes={notes}
-            onSelectNote={handleSelectNote}
-            selectedNoteId={selectedNote?.id}
-            onDeleteNote={handleDeleteNote}
+            items={items}
+            onSelectItem={handleSelectItem}
+            selectedItemId={selectedNote?.id || selectedFolder?.id}
+            onDeleteItem={handleDeleteItem}
+            onRenameFolder={handleRenameFolder}
           />
         </div>
       </div>
@@ -335,6 +413,16 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Folder Creation Modal */}
+      <InputModal
+        isOpen={showFolderModal}
+        title="Create New Folder"
+        placeholder="Enter folder name..."
+        onConfirm={handleFolderModalConfirm}
+        onCancel={handleFolderModalCancel}
+        maxLength={255}
+      />
     </div>
   );
 }

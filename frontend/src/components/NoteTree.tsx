@@ -1,28 +1,39 @@
 import { useState } from 'react';
-import { Note } from '../lib/api';
+import { Item, Note, Folder } from '../lib/api';
 
 interface NoteTreeItemProps {
-  note: Note;
-  children?: Note[];
-  onSelect: (note: Note) => void;
+  item: Item;
+  children?: Item[];
+  onSelect: (item: Item) => void;
   selectedId?: string;
   level?: number;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, itemType: string) => void;
+  onRename?: (id: string, newName: string) => void;
 }
 
 export function NoteTreeItem({
-  note,
+  item,
   children = [],
   onSelect,
   selectedId,
   level = 0,
   onDelete,
+  onRename,
 }: NoteTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
   const hasChildren = children.length > 0;
 
+  const isFolder = item.item_type === 'folder';
+
   // Extract first text from Tiptap JSON for preview
-  const getPreviewText = (content: any): string => {
+  const getPreviewText = (content: any, itemType: string): string => {
+    // Folders just display their name
+    if (itemType === 'folder') {
+      return (item as Folder).name;
+    }
+
     try {
       if (typeof content === 'string') {
         content = JSON.parse(content);
@@ -43,20 +54,23 @@ export function NoteTreeItem({
       };
 
       const text = findFirstText(content);
-      if (!text.trim()) return note.type === 'ai' ? 'AI Response' : 'Empty note';
+      if (!text.trim()) return item.item_type === 'ai-note' ? 'AI Response' : 'Empty note';
 
       // Truncate long text
       return text.length > 60 ? text.slice(0, 60) + '...' : text;
     } catch {
-      return note.type === 'ai' ? 'AI Response' : 'Note';
+      return item.item_type === 'ai-note' ? 'AI Response' : 'Note';
     }
   };
 
-  const previewText = getPreviewText(note.content);
-  const isSelected = selectedId === note.id;
+  const previewText = getPreviewText(item.content, item.item_type);
+  const isSelected = selectedId === item.id;
 
-  // Status indicator
+  // Status indicator (only for notes, not folders)
   const getStatusIndicator = () => {
+    if (isFolder) return null;
+
+    const note = item as Note;
     switch (note.status) {
       case 'processing':
         return (
@@ -75,6 +89,21 @@ export function NoteTreeItem({
     }
   };
 
+  // Get icon based on item type
+  const getIcon = () => {
+    if (isFolder) return '📁';
+    return item.item_type === 'ai-note' ? '🤖' : '📝';
+  };
+
+  // Handle rename submission
+  const handleRenameSubmit = () => {
+    if (renameDraft.trim() && onRename) {
+      onRename(item.id, renameDraft.trim());
+    }
+    setIsRenaming(false);
+    setRenameDraft('');
+  };
+
   return (
     <div style={{ marginLeft: level * 16 }} className="mb-1">
       <div
@@ -88,11 +117,11 @@ export function NoteTreeItem({
               : 'hover:bg-accent/30 border border-transparent'
           }
         `}
-        onClick={() => onSelect(note)}
+        onClick={() => onSelect(item)}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Expand/collapse button */}
-          {hasChildren && (
+          {(hasChildren || isFolder) && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -104,28 +133,56 @@ export function NoteTreeItem({
             </button>
           )}
 
-          {/* Note icon */}
+          {/* Item icon */}
           <span className="flex-shrink-0 text-base">
-            {note.type === 'ai' ? '🤖' : '📝'}
+            {getIcon()}
           </span>
 
-          {/* Note preview text */}
+          {/* Item preview text or rename input */}
           <div className="flex-1 min-w-0">
-            <div
-              className={`
-                text-sm truncate
-                ${note.type === 'ai' ? 'text-primary font-medium' : 'text-foreground'}
-                ${isSelected ? 'font-semibold' : ''}
-              `}
-            >
-              {previewText}
-            </div>
+            {isRenaming ? (
+              <input
+                type="text"
+                value={renameDraft}
+                onChange={(e) => setRenameDraft(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRenameSubmit();
+                  if (e.key === 'Escape') {
+                    setIsRenaming(false);
+                    setRenameDraft('');
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1 text-sm bg-background border border-primary rounded"
+                autoFocus
+              />
+            ) : (
+              <>
+                <div
+                  className={`
+                    text-sm truncate
+                    ${isFolder ? 'font-medium text-foreground' : ''}
+                    ${item.item_type === 'ai-note' ? 'text-primary font-medium' : 'text-foreground'}
+                    ${isSelected ? 'font-semibold' : ''}
+                  `}
+                  onDoubleClick={() => {
+                    if (isFolder && onRename) {
+                      setRenameDraft((item as Folder).name);
+                      setIsRenaming(true);
+                    }
+                  }}
+                >
+                  {previewText}
+                </div>
 
-            {/* Process type badge */}
-            {note.process_type && (
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {note.process_type}
-              </div>
+                {/* Process type badge */}
+                {!isFolder && (item as Note).process_type && (
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {(item as Note).process_type}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -134,13 +191,16 @@ export function NoteTreeItem({
         <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusIndicator()}
 
-          {/* Delete button (only for user notes, appears on hover) */}
-          {note.type === 'user' && onDelete && (
+          {/* Delete button (for user notes and folders, appears on hover) */}
+          {(item.item_type === 'note' || isFolder) && onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm('Delete this note and all its children?')) {
-                  onDelete(note.id);
+                const message = isFolder
+                  ? 'Delete this folder and all its contents?'
+                  : 'Delete this note and all its children?';
+                if (confirm(message)) {
+                  onDelete(item.id, item.item_type);
                 }
               }}
               className="
@@ -150,7 +210,7 @@ export function NoteTreeItem({
                 p-1 rounded
                 hover:bg-destructive/10
               "
-              title="Delete note"
+              title={isFolder ? 'Delete folder' : 'Delete note'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -166,11 +226,12 @@ export function NoteTreeItem({
           {children.map((child) => (
             <NoteTreeItem
               key={child.id}
-              note={child}
+              item={child}
               onSelect={onSelect}
               selectedId={selectedId}
               level={level + 1}
               onDelete={onDelete}
+              onRename={onRename}
             />
           ))}
         </div>
@@ -179,44 +240,69 @@ export function NoteTreeItem({
   );
 }
 
-// Helper component to build the tree structure from flat notes list
+// Helper component to build the tree structure from flat items list
 interface NoteTreeProps {
-  notes: Note[];
-  onSelectNote: (note: Note) => void;
-  selectedNoteId?: string;
-  onDeleteNote?: (id: string) => void;
+  items: Item[];
+  onSelectItem: (item: Item) => void;
+  selectedItemId?: string;
+  onDeleteItem?: (id: string, itemType: string) => void;
+  onRenameFolder?: (id: string, newName: string) => void;
 }
 
 export function NoteTree({
-  notes,
-  onSelectNote,
-  selectedNoteId,
-  onDeleteNote,
+  items,
+  onSelectItem,
+  selectedItemId,
+  onDeleteItem,
+  onRenameFolder,
 }: NoteTreeProps) {
-  // Build tree structure
+  // Build tree structure with full recursion
   const buildTree = () => {
-    const noteMap = new Map<string, Note[]>();
+    const itemMap = new Map<string, Item[]>();
 
-    // Group notes by parent_id
-    notes.forEach((note) => {
-      const parentId = note.parent_id || 'root';
-      if (!noteMap.has(parentId)) {
-        noteMap.set(parentId, []);
+    // Group items by parent_id
+    items.forEach((item) => {
+      const parentId = item.parent_id || 'root';
+      if (!itemMap.has(parentId)) {
+        itemMap.set(parentId, []);
       }
-      noteMap.get(parentId)!.push(note);
+      itemMap.get(parentId)!.push(item);
     });
 
-    // Get root notes (notes with no parent)
-    const rootNotes = noteMap.get('root') || [];
-
-    // Recursive function to get children
-    const getChildren = (noteId: string): Note[] => {
-      return noteMap.get(noteId) || [];
+    // Sort items: folders first, then by creation date
+    const sortItems = (items: Item[]) => {
+      return items.sort((a, b) => {
+        // Folders first
+        if (a.item_type === 'folder' && b.item_type !== 'folder') return -1;
+        if (a.item_type !== 'folder' && b.item_type === 'folder') return 1;
+        // Then by created_at
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
     };
 
-    return rootNotes.map((note) => ({
-      note,
-      children: getChildren(note.id),
+    // Recursive function to build full tree with all descendants
+    const buildNodeWithChildren = (itemId: string): Item[] => {
+      const directChildren = itemMap.get(itemId) || [];
+      return sortItems(directChildren).map(child => {
+        // Recursively get all descendants
+        const childrenOfChild = buildNodeWithChildren(child.id);
+        return {
+          ...child,
+          // Store children in the item itself (needed for recursive rendering)
+          _children: childrenOfChild
+        } as Item & { _children?: Item[] };
+      });
+    };
+
+    // Get root items (items with no parent)
+    const rootItems = sortItems(itemMap.get('root') || []);
+
+    return rootItems.map((item) => ({
+      item: {
+        ...item,
+        _children: buildNodeWithChildren(item.id)
+      } as Item & { _children?: Item[] },
+      children: buildNodeWithChildren(item.id),
     }));
   };
 
@@ -225,22 +311,23 @@ export function NoteTree({
   if (tree.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No notes yet</p>
-        <p className="text-sm mt-2">Create your first note to get started</p>
+        <p>No notes or folders yet</p>
+        <p className="text-sm mt-2">Create your first note or folder to get started</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-1">
-      {tree.map(({ note, children }) => (
+      {tree.map(({ item, children }) => (
         <NoteTreeItem
-          key={note.id}
-          note={note}
+          key={item.id}
+          item={item}
           children={children}
-          onSelect={onSelectNote}
-          selectedId={selectedNoteId}
-          onDelete={onDeleteNote}
+          onSelect={onSelectItem}
+          selectedId={selectedItemId}
+          onDelete={onDeleteItem}
+          onRename={onRenameFolder}
         />
       ))}
     </div>

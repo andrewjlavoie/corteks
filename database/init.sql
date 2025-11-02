@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS notes (
   parent_id UUID REFERENCES notes(id) ON DELETE CASCADE,
   type VARCHAR(10) CHECK(type IN ('user', 'ai')) NOT NULL,
 
+  -- Folder/File organization
+  item_type VARCHAR(20) DEFAULT 'note' CHECK(item_type IN ('folder', 'note', 'ai-note')),
+  name VARCHAR(255), -- Name for folders or optional display name for notes
+
   -- Content stored as JSONB (Tiptap JSON format)
-  content JSONB NOT NULL DEFAULT '{"type":"doc","content":[]}',
+  content JSONB DEFAULT '{"type":"doc","content":[]}',
 
   -- AI Processing fields
   process_type VARCHAR(50),
@@ -25,6 +29,8 @@ CREATE INDEX IF NOT EXISTS idx_notes_parent_id ON notes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notes_status ON notes(status);
 CREATE INDEX IF NOT EXISTS idx_notes_type ON notes(type);
+CREATE INDEX IF NOT EXISTS idx_notes_item_type ON notes(item_type);
+CREATE INDEX IF NOT EXISTS idx_notes_name ON notes(name) WHERE name IS NOT NULL;
 
 -- Create a function to automatically update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

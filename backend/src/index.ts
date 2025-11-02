@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import notesRouter from './routes/notes.js';
 import processRouter from './routes/process.js';
+import foldersRouter from './routes/folders.js';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +53,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/notes', notesRouter);
 app.use('/api/notes', processRouter); // Process routes are mounted under /api/notes/:id/process
 app.use('/api', processRouter); // Also mount /api/processes
+app.use('/api/folders', foldersRouter);
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
