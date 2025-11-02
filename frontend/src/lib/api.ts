@@ -2,17 +2,47 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-export interface Note {
+export type ItemType = 'folder' | 'note' | 'ai-note';
+export type NoteStatus = 'draft' | 'processing' | 'complete' | 'failed';
+
+export interface BaseItem {
   id: string;
   parent_id: string | null;
-  type: 'user' | 'ai';
-  content: any; // Tiptap JSON
-  process_type: string | null;
-  status: 'draft' | 'processing' | 'complete' | 'failed';
-  error_message: string | null;
+  item_type: ItemType;
+  name?: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export interface Folder extends BaseItem {
+  item_type: 'folder';
+  name: string;
+  content: null;
+  process_type: null;
+  status: null;
+  error_message: null;
+  type: 'user';
+}
+
+export interface Note extends BaseItem {
+  item_type: 'note';
+  type: 'user';
+  content: any; // Tiptap JSON
+  process_type: string | null;
+  status: NoteStatus;
+  error_message: string | null;
+}
+
+export interface AINote extends BaseItem {
+  item_type: 'ai-note';
+  type: 'ai';
+  content: any; // Tiptap JSON
+  process_type: string;
+  status: NoteStatus;
+  error_message: string | null;
+}
+
+export type Item = Folder | Note | AINote;
 
 export interface ProcessResponse {
   success: boolean;
@@ -169,6 +199,70 @@ export const api = {
   async getProcesses(): Promise<ProcessType[]> {
     const response = await fetch(`${API_BASE}/processes`);
     return handleResponse<ProcessType[]>(response);
+  },
+
+  // Folder operations
+
+  /**
+   * Create a new folder
+   */
+  async createFolder(name: string, parentId?: string): Promise<Folder> {
+    const response = await fetch(`${API_BASE}/folders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        parent_id: parentId,
+      }),
+    });
+    return handleResponse<Folder>(response);
+  },
+
+  /**
+   * Get contents of a folder
+   */
+  async getFolderContents(folderId: string): Promise<Item[]> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/contents`);
+    return handleResponse<Item[]>(response);
+  },
+
+  /**
+   * Update/rename a folder
+   */
+  async updateFolder(folderId: string, name?: string, parentId?: string): Promise<Folder> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        parent_id: parentId,
+      }),
+    });
+    return handleResponse<Folder>(response);
+  },
+
+  /**
+   * Delete a folder and all its contents
+   */
+  async deleteFolder(folderId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/folders/${folderId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse<void>(response);
+  },
+
+  /**
+   * Move an item (note or folder) to a different parent
+   */
+  async moveItem(itemId: string, parentId: string | null): Promise<Item> {
+    const response = await fetch(`${API_BASE}/folders/${itemId}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        parent_id: parentId,
+      }),
+    });
+    return handleResponse<Item>(response);
   },
 };
 
