@@ -13,6 +13,7 @@ interface NoteTreeItemProps {
   autoRenameId?: string;
   onCreateNote?: (parentId: string) => void;
   onCreateFolder?: (parentId: string) => void;
+  onMoveItem?: (itemId: string, newParentId: string | null) => void;
 }
 
 export function NoteTreeItem({
@@ -26,14 +27,17 @@ export function NoteTreeItem({
   autoRenameId,
   onCreateNote,
   onCreateFolder,
+  onMoveItem,
 }: NoteTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const hasChildren = children.length > 0;
 
   const isFolder = item.item_type === 'folder';
+  const isSelected = selectedId === item.id;
 
   // Auto-trigger rename mode for newly created folders
   useEffect(() => {
@@ -115,6 +119,56 @@ export function NoteTreeItem({
     }
     setIsRenaming(false);
     setRenameDraft('');
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      id: item.id,
+      type: item.item_type,
+    }));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    // Only allow dropping into folders
+    if (!isFolder) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (!isFolder || !onMoveItem) return;
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const draggedItemId = data.id;
+
+      // Prevent dropping item into itself
+      if (draggedItemId === item.id) return;
+
+      // Prevent dropping parent into its own child (would create circular reference)
+      // This is a basic check - backend will do full validation
+      if (item.parent_id === draggedItemId) return;
+
+      // Move the item
+      onMoveItem(draggedItemId, item.id);
+    } catch (error) {
+      console.error('Error handling drop:', error);
+    }
   };
 
   // Handle context menu
@@ -211,6 +265,11 @@ export function NoteTreeItem({
   return (
     <div style={{ marginLeft: level * 12 }} className="mb-0.5">
       <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={`
           group flex items-center justify-between gap-1
           px-2 py-1.5 rounded cursor-pointer
@@ -218,6 +277,8 @@ export function NoteTreeItem({
           ${
             isSelected
               ? 'bg-primary/20'
+              : isDragOver
+              ? 'bg-accent/50 ring-2 ring-primary/50'
               : 'hover:bg-accent/30'
           }
         `}
@@ -335,6 +396,7 @@ export function NoteTreeItem({
               autoRenameId={autoRenameId}
               onCreateNote={onCreateNote}
               onCreateFolder={onCreateFolder}
+              onMoveItem={onMoveItem}
             />
           ))}
         </div>
@@ -363,6 +425,7 @@ interface NoteTreeProps {
   autoRenameId?: string; // ID of folder that should auto-enter rename mode
   onCreateNote?: (parentId: string) => void;
   onCreateFolder?: (parentId: string) => void;
+  onMoveItem?: (itemId: string, newParentId: string | null) => void;
 }
 
 export function NoteTree({
@@ -374,6 +437,7 @@ export function NoteTree({
   autoRenameId,
   onCreateNote,
   onCreateFolder,
+  onMoveItem,
 }: NoteTreeProps) {
   // Build tree structure with full recursion
   const buildTree = () => {
@@ -450,6 +514,7 @@ export function NoteTree({
           autoRenameId={autoRenameId}
           onCreateNote={onCreateNote}
           onCreateFolder={onCreateFolder}
+          onMoveItem={onMoveItem}
         />
       ))}
     </div>

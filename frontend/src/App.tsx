@@ -227,6 +227,18 @@ function App() {
     }
   };
 
+  // Move an item to a different parent
+  const handleMoveItem = async (itemId: string, newParentId: string | null) => {
+    try {
+      setError(null);
+      await api.moveItem(itemId, newParentId);
+      await loadItems();
+    } catch (err: any) {
+      console.error('Failed to move item:', err);
+      setError(err.message || 'Failed to move item');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -285,6 +297,7 @@ function App() {
             autoRenameId={autoRenameId}
             onCreateNote={handleCreateNote}
             onCreateFolder={handleCreateFolder}
+            onMoveItem={handleMoveItem}
           />
         </div>
       </div>
